@@ -1,0 +1,238 @@
+NAME
+    NetAddr::IP::Lite - Manages IPv4 and IPv6 addresses and subnets
+
+SYNOPSIS
+      use NetAddr::IP::Lite;
+
+      my $ip = new NetAddr::IP::Lite '127.0.0.1';
+
+      print "The address is ", $ip->addr, " with mask ", $ip->mask, "\n" ;
+
+      if ($ip->within(new NetAddr::IP::Lite "127.0.0.0", "255.0.0.0")) {
+          print "Is a loopback address\n";
+      }
+
+                                    # This prints 127.0.0.1/32
+      print "You can also say $ip...\n";
+
+INSTALLATION
+    Un-tar the distribution in an appropriate directory and type:
+
+            perl Makefile.PL
+            make
+            make test
+            make install
+
+    NetAddr::IP::Lite depends on NetAddr::IP::Util which installs by default
+    with its primary functions compiled using Perl's XS extensions to build
+    a 'C' library. If you do not have a 'C' complier available or would like
+    the slower Pure Perl version for some other reason, then type:
+
+            perl Makefile.PL -noxs
+            make
+            make test
+            make install
+
+DESCRIPTION
+    This module provides an object-oriented abstraction on top of IP
+    addresses or IP subnets, that allows for easy manipulations. Most of the
+    operations of NetAddr::IP are supported. This module will work older
+    versions of Perl and does not use Math::BigInt.
+
+    The internal representation of all IP objects is in 128 bit IPv6
+    notation. IPv4 and IPv6 objects may be freely mixed.
+
+    The supported operations are described below:
+
+  Overloaded Operators
+
+    Assignment ("=")
+        Has been optimized to copy one NetAddr::IP::Lite object to another
+        very quickly.
+
+    Stringification
+        An object can be used just as a string. For instance, the following
+        code
+
+                my $ip = new NetAddr::IP::Lite '192.168.1.123';
+                print "$ip\n";
+
+        Will print the string 192.168.1.123/32.
+
+    Equality
+        You can test for equality with either "eq" or "==". "eq" allows the
+        comparison with arbitrary strings as well as NetAddr::IP::Lite
+        objects. The following example:
+
+            if (NetAddr::IP::Lite->new('127.0.0.1','255.0.0.0') eq '127.0.0.1/8') 
+               { print "Yes\n"; }
+
+        Will print out "Yes".
+
+        Comparison with "==" requires both operands to be NetAddr::IP::Lite
+        objects.
+
+        In both cases, a true value is returned if the CIDR representation
+        of the operands is equal.
+
+    Comparison via >, <, >=, <=, <=> and "cmp"
+        Internally, all network objects are represented in 128 bit format.
+        The numeric representation of the network is compared through the
+        corresponding operation. The netmask is ignored for these
+        comparisons, as there is no standard criteria to say wether 10/8 is
+        larger than 10/10 or not.
+
+    Addition of a constant
+        Adding a constant to a NetAddr::IP::Lite object changes its address
+        part to point to the one so many hosts above the start address. For
+        instance, this code:
+
+            print NetAddr::IP::Lite->new('127.0.0.1') + 5;
+
+        will output 127.0.0.6/8. The address will wrap around at the
+        broadcast back to the network address. This code:
+
+            print NetAddr::IP::Lite->new('10.0.0.1/24') + 255;
+
+        outputs 10.0.0.0/24.
+
+    Substraction of a constant
+        The complement of the addition of a constant.
+
+    Auto-increment
+        Auto-incrementing a NetAddr::IP::Lite object causes the address part
+        to be adjusted to the next host address within the subnet. It will
+        wrap at the broadcast address and start again from the network
+        address.
+
+    Auto-decrement
+        Auto-decrementing a NetAddr::IP::Lite object performs exactly the
+        opposite of auto-incrementing it, as you would expect.
+
+  Methods
+
+    "->new([$addr, [ $mask]])"
+        This method creates a new address with the supplied address in
+        "$addr" and an optional netmask "$mask", which can be omitted to get
+        a /32 or /128 netmask for IPv4 / IPv6 addresses respectively
+
+        "$addr" can be any of the following:
+
+          n.n.n.n
+          n.n.n.n/mm            32 bit cidr notation
+
+        Any RFC1884 notation
+
+          ::n.n.n.n
+          ::n.n.n.n/mmm         128 bit cidr notation
+          ::x:x
+          ::x:x/mmm
+          x:x:x:x:x:x:x:x
+          x:x:x:x:x:x:x:x/mmm
+
+        If called with no arguments, 'default' is assumed.
+
+    "->broadcast()"
+        Returns a new object refering to the broadcast address of a given
+        subnet. The broadcast address has all ones in all the bit positions
+        where the netmask has zero bits. This is normally used to address
+        all the hosts in a given subnet.
+
+    "->network()"
+        Returns a new object refering to the network address of a given
+        subnet. A network address has all zero bits where the bits of the
+        netmask are zero. Normally this is used to refer to a subnet.
+
+    "->addr()"
+        Returns a scalar with the address part of the object as an IPv4 or
+        IPv6 text string as appropriate. This is useful for printing or for
+        passing the address part of the NetAddr::IP::Lite object to other
+        components that expect an IP address.
+
+    "->mask()"
+        Returns a scalar with the mask as an IPv4 or IPv6 text string as
+        appropriate.
+
+    "->masklen()"
+        Returns a scalar the number of one bits in the mask.
+
+    "->bits()"
+        Returns the wide of the address in bits. Normally 32 for v4 and 128
+        for v6.
+
+    "->version()"
+        Returns the version of the address or subnet. Currently this can be
+        either 4 or 6.
+
+    "->cidr()"
+        Returns a scalar with the address and mask in CIDR notation. A
+        NetAddr::IP::Lite object *stringifies* to the result of this
+        function.
+
+    "->aton()"
+        Returns the address part of the NetAddr::IP::Lite object in the same
+        format as the "inet_aton()" or "ipv6_aton" function respectively.
+
+    "->range()"
+        Returns a scalar with the base address and the broadcast address
+        separated by a dash and spaces. This is called range notation.
+
+    "->numeric()"
+        When called in a scalar context, will return a numeric
+        representation of the address part of the IP address. When called in
+        an array contest, it returns a list of two elements. The first
+        element is as described, the second element is the numeric
+        representation of the netmask.
+
+        This method is essential for serializing the representation of a
+        subnet.
+
+    "$me->contains($other)"
+        Returns true when "$me" completely contains "$other". False is
+        returned otherwise and "undef" is returned if "$me" and "$other" are
+        not both "NetAddr::IP::Lite" objects.
+
+    "$me->within($other)"
+        The complement of "->contains()". Returns true when "$me" is
+        completely contained within "$other", undef if "$me" and "$other"
+        are not both "NetAddr::IP::Lite" objects.
+
+    "->first()"
+        Returns a new object representing the first useable IP address
+        within the subnet (ie, the first host address).
+
+    "->last()"
+        Returns a new object representing the last useable IP address within
+        the subnet (ie, one less than the broadcast address).
+
+    "->nth($index)"
+        Returns a new object representing the *n*-th useable IP address
+        within the subnet (ie, the *n*-th host address). If no address is
+        available (for example, when the network is too small for "$index"
+        hosts), "undef" is returned.
+
+    "->num()"
+        Returns the number of useable IP addresses within the subnet, not
+        counting the broadcast address.
+
+  EXPORT
+
+    None by default.
+
+AUTHOR
+    Luis E. Muñoz <luismunoz@cpan.org> Michael Robinton
+    <michael@bizsystems.com>
+
+WARRANTY
+    This software comes with the same warranty as perl itself (ie, none), so
+    by using it you accept any and all the liability.
+
+LICENSE
+    This software is (c) Luis E. Muñoz and Michael Robinton. It can be used
+    under the terms of the perl artistic license provided that proper credit
+    for the work of the author is preserved in the form of this copyright
+    notice and license for this module.
+
+SEE ALSO
+    perl(1), NetAddr::IP(3), NetAddr::IP::Util(3)
+
