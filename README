@@ -120,15 +120,18 @@ DESCRIPTION
 
           n.n.n.n
           n.n.n.n/mm            32 bit cidr notation
+          n.n.n.n/m.m.m.m
 
         Any RFC1884 notation
 
           ::n.n.n.n
           ::n.n.n.n/mmm         128 bit cidr notation
+          ::n.n.n.n/::m.m.m.m
           ::x:x
           ::x:x/mmm
           x:x:x:x:x:x:x:x
           x:x:x:x:x:x:x:x/mmm
+          x:x:x:x:x:x:x:x/m:m:m:m:m:m:m:m any RFC1884 notation
 
         If called with no arguments, 'default' is assumed.
 
@@ -228,10 +231,11 @@ WARRANTY
     by using it you accept any and all the liability.
 
 LICENSE
-    This software is (c) Luis E. Muñoz and Michael Robinton. It can be used
-    under the terms of the perl artistic license provided that proper credit
-    for the work of the author is preserved in the form of this copyright
-    notice and license for this module.
+    This software is (c) Luis E. Muñoz, 1999 - 2005, and (c) Michael
+    Robinton, 2006. It can be used under the terms of the perl artistic
+    license provided that proper credit for the work of the author is
+    preserved in the form of this copyright notice and license for this
+    module.
 
 SEE ALSO
     perl(1), NetAddr::IP(3), NetAddr::IP::Util(3)

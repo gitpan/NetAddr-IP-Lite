@@ -73,7 +73,7 @@ use NetAddr::IP::Util qw(
 );
 use vars qw($Class $VERSION);
 
-$VERSION = do { my @r = (q$Revision: 0.01 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.02 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 my $_zero = pack('L4',0,0,0,0);
 my $_ones = ~$_zero;
@@ -328,15 +328,18 @@ C<$addr> can be any of the following:
 
   n.n.n.n
   n.n.n.n/mm		32 bit cidr notation
+  n.n.n.n/m.m.m.m
 
 Any RFC1884 notation
 
   ::n.n.n.n
   ::n.n.n.n/mmm		128 bit cidr notation
+  ::n.n.n.n/::m.m.m.m
   ::x:x
   ::x:x/mmm
   x:x:x:x:x:x:x:x
   x:x:x:x:x:x:x:x/mmm
+  x:x:x:x:x:x:x:x/m:m:m:m:m:m:m:m any RFC1884 notation
 
 If called with no arguments, 'default' is assumed.
 
@@ -354,6 +357,11 @@ sub new {
     $mask = $ip =~ /:/ ? 128 - $mask : 32 - $mask;
     return undef if $mask < 0 || $mask > 128;
     $nmask = shiftleft(Ones,$mask);
+  } elsif ($ip =~ m|^([0-9a-fA-F:.]+)/([0-9a-fA-F:.]+)$|) {
+
+    return undef unless ($naddr = inet_any2n($1));
+    return undef unless ($nmask = inet_any2n($2));
+    $nmask |= V4mask if isIPv4($naddr);
   } else {
     return undef unless ($naddr = inet_any2n($ip));
     if ($mask) {

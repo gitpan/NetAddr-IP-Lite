@@ -1,4 +1,10 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+0.02  Fri Apr 28 16:11:00 PDT 2006
+	update Lite.pm to accept ->new('addr/mask')
+	where addr and mask are both in IP address format
+
+	add test for above t/netaddr.t
+
 0.01  Wed Apr 26 19:03:18 PDT 2006
 	initial release

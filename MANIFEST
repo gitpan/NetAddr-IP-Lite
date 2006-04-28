@@ -13,6 +13,7 @@ t/contains.t
 t/firstlast.t
 t/mask.t
 t/masklen.t
+t/netaddr.t
 t/network.t
 t/nth.t
 t/num.t
