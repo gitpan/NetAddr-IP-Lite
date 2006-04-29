@@ -1,5 +1,8 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+0.04  Fri Apr 28 17:36:28 PDT 2006
+	left Util/Makefile.pl out of the top level distro
+
 0.03  Fri Apr 28 17:26:51 PDT 2006
 	oops! left prerequsite Util 0.08 in the Makefile
 	when it is include in this distro

@@ -28,6 +28,7 @@ Util/Changes
 Util/docs/rfc1884.txt
 Util/GPL
 Util/lib/NetAddr/IP/UtilPP.pm
+Util/Makefile.PL
 Util/MANIFEST
 Util/MANIFEST.SKIP
 Util/README
