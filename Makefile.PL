@@ -11,9 +11,8 @@ my $module = $& .'.pm';
 my %makeparms = (
     'NAME'		=> $pkg,
     'VERSION_FROM'	=> $module, # finds $VERSION
-    'PREREQ_PM'		=> {
-				NetAddr::IP::Util	=> 0.08,
-			},
+#    'PREREQ_PM'		=> {
+#			},
     'clean'		=> { FILES    => "*~ tmp*"},
     'dist'		=> {COMPRESS=>'gzip', SUFFIX=>'gz'}
 );
