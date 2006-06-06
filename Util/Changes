@@ -1,5 +1,9 @@
 Revision history for Perl extension NetAddr::IP::Util
 
+0.12  Tue Jun  6 08:21:12 PDT 2006
+	add logic to makefile so 'siteconfig' and C libs
+	are not used in PurePerl mode
+
 0.11  Mon Jun  5 14:45:09 PDT 2006
 	fix Sparc problems
     1)	add workaround for OS's that do not have inet_aton

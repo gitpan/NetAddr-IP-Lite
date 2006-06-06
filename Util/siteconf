@@ -79,11 +79,11 @@ cat >localStuff.h <<\_ASBOX
  * Don't edit this file, edit 'siteconf' instead.	*
  *							*
  * ****************************************************	*/
-#ifdef MY_BIG_ENDIAN
-#undef MY_BIG_ENDIAN
+#ifdef host_is_BIG_ENDIAN
+#undef host_is_BIG_ENDIAN
 #endif
-#ifdef MY_LITTLE_ENDIAN
-#undef MY_LITTLE_ENDIAN
+#ifdef host_is_LITTLE_ENDIAN
+#undef host_is_LITTLE_ENDIAN
 #endif
 _ASBOX
 
@@ -1744,13 +1744,13 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   };} && [ $ac_status -ne 1 ]; then
   if [ $ac_status -eq 0 ]; then
 	cat >>localStuff.h <<\_ACEOF
-#define MY_BIG_ENDIAN
+#define host_is_BIG_ENDIAN
 _ACEOF
   echo "$as_me:$LINENO: result: BIG_ENDIAN" >&5
   echo "${ECHO_T}... BIG_ENDIAN" >&6
   else
 	cat >>localStuff.h <<\_ACEOF
-#define MY_LITTLE_ENDIAN
+#define host_is_LITTLE_ENDIAN
 _ACEOF
   echo "$as_me:$LINENO: result: LITTLE_ENDIAN" >&5
   echo "${ECHO_T}... LITTLE_ENDIAN" >&6

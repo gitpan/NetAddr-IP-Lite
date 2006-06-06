@@ -1,5 +1,8 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+0.07  Tue Jun  6 08:21:12 PDT 2006
+	update NetAddr::IP::Util to v0.12
+
 0.06  Mon Jun  5 21:34:28 PDT 2006
 	fix Sparc problems in Util v0.11
     1)	add workaround for OS's that do not have inet_aton

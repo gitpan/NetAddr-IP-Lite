@@ -154,11 +154,11 @@ netswap_copy(void * dest, void * src, int len)
   register u_int32_t * d = dest, * s = src;
 
   for (/* -- */;len>0;len--) {
-#ifdef MY_LITTLE_ENDIAN
+#ifdef host_is_LITTLE_ENDIAN
     *d++ =  (((*s & 0xff000000) >> 24) | ((*s & 0x00ff0000) >>  8) | \
              ((*s & 0x0000ff00) <<  8) | ((*s & 0x000000ff) << 24));
 #else
-# ifdef MY_BIG_ENDIAN
+# ifdef host_is_BIG_ENDIAN
     *d++ = *s;
 # else
 # error ENDIANness not defined
@@ -173,7 +173,7 @@ netswap_copy(void * dest, void * src, int len)
 void
 netswap(void * ap, int len)
 {
-#ifdef MY_LITTLE_ENDIAN
+#ifdef host_is_LITTLE_ENDIAN
   register u_int32_t * a = ap;
   for (/* -- */;len >0;len--) {
     *a++ =  (((*a & 0xff000000) >> 24) | ((*a & 0x00ff0000) >>  8) | \
