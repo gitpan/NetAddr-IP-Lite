@@ -29,8 +29,7 @@ my $cfile = $& .'.c';
 my %makeparms = (
     NAME		=> $pkg,
     VERSION_FROM	=> $module,	# finds $VERSION
-    depend		=> {$cfile => 'xs_include/miniSocket.inc',
-					'localStuff.h'
+    depend		=> {$cfile => q[xs_include/miniSocket.inc localStuff.h],
 			},
     LIBS		=> [],
     XS			=> {},
@@ -71,7 +70,14 @@ if ($useXS) {
   # turn the XS bits on.
   delete $makeparms{'XS'};
   delete $makeparms{'C'};
-  $makeparms{LIBS} = ['-lsocket -lnsl'];
+  my $link = '';
+  foreach(qw(-lsocket -lnsl)) {
+    if ($Config{libs} =~ /$_\b/) {
+      $link .= $_ .' ';
+    }
+  }
+  chop $link;
+  $makeparms{LIBS} = [$link];
   $begin = q|
 config  :: localStuff.h
 	@$(NOOP)

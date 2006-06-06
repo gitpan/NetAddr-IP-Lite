@@ -1,5 +1,12 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+0.09  Tue Jun  6 08:37:01 PDT 2006
+	update Util/Makefile.PM to check for link libraries
+	that ExtUtils::MakeMaker does not find properly
+
+	remove 'use warnings' from Lite.pm for backwards 
+	compatibility with older perl versions
+
 0.08  Tue Jun  6 08:33:11 PDT 2006
 	update Util.xs for build on windoze
 

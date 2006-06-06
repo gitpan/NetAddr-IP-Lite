@@ -1,5 +1,12 @@
 Revision history for Perl extension NetAddr::IP::Util
 
+0.14  Tue Jun  6 08:37:01 PDT 2006
+	add logic to check LIBS => [-lfiles]
+	individually. ExtUtils::xxx does a bad job and
+	leaves libs that do not exist in the list
+	which causes 'siteconf' to blow up on missing libs
+	on perl 5.053 (and probably others)
+
 0.13  Tue Jun  6 08:33:11 PDT 2006
 	added to xs file, 'hopefully' to allow build on windoze platforms
 

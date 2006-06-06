@@ -4,7 +4,7 @@ package NetAddr::IP::Lite;
 
 use Carp;
 use strict;
-use warnings;
+#use warnings;
 use NetAddr::IP::Util qw(
 	inet_any2n
 	addconst
@@ -19,7 +19,7 @@ use NetAddr::IP::Util qw(
 );
 use vars qw($Class $VERSION);
 
-$VERSION = do { my @r = (q$Revision: 0.08 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.09 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head1 NAME
 
