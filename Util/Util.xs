@@ -17,9 +17,21 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef _CYGWIN
+#include <windows.h>
+#endif
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+
+#ifdef _CYGWIN
+#include <Win32-Extensions.h>
+#endif
 
 /*	take care of missing u_int32_t definitions windoze/sun		*/
 #include "u_intxx.h"
@@ -27,6 +39,10 @@
 /*	needed for testing with 'printf'
 #include <stdio.h>
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 /*	workaround for OS's without inet_aton			*/
 #include "xs_include/inet_aton.c"

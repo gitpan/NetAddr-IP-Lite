@@ -1,5 +1,8 @@
 Revision history for Perl extension NetAddr::IP::Util
 
+0.13  Tue Jun  6 08:33:11 PDT 2006
+	added to xs file, 'hopefully' to allow build on windoze platforms
+
 0.12  Tue Jun  6 08:21:12 PDT 2006
 	add logic to makefile so 'siteconfig' and C libs
 	are not used in PurePerl mode
