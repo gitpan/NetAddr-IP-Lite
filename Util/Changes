@@ -1,6 +1,21 @@
 Revision history for Perl extension NetAddr::IP::Util
 
-0.08	Wed Apr 26 18:33:12 PDT 2006
+0.11  Mon Jun  5 14:45:09 PDT 2006
+	fix Sparc problems
+    1)	add workaround for OS's that do not have inet_aton
+
+    2)	add workaround for compilers that do not understand
+	#if MACRO1 == MACRO2
+
+0.10  Sat Jun  3 19:07:51 PDT 2006
+	add site configuration to supply u_intxx_t vars
+	for Sun OS and others that don't have them
+
+0.09  Sun May  7 18:06:43 PDT 2006
+	UtilPP.pm v0.06, removed unnecessary pack(unpack) sequences
+	to speed up ipv4->6, ipv6->4 conversions
+
+0.08  Wed Apr 26 18:33:12 PDT 2006
 	correct documentation error
 	add ipv6to4
 

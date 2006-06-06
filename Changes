@@ -1,5 +1,16 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+0.06  Mon Jun  5 21:34:28 PDT 2006
+	fix Sparc problems in Util v0.11
+    1)	add workaround for OS's that do not have inet_aton
+
+    2)	add workaround for compilers that do not understand
+	#if MACRO1 == MACRO2
+
+0.05  Sun May  7 18:06:43 PDT 2006
+	updated UtilPP.pm v0.06 to remove unnecessary pack(unpack) sequences
+	to speed up ipv6->4, ipv4->6 conversions
+
 0.04  Fri Apr 28 17:36:28 PDT 2006
 	left Util/Makefile.pl out of the top level distro
 

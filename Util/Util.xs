@@ -20,21 +20,24 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-/*	include stuff to keep minisocket updated to latest version	*/
-#include "xs_include/my_handy.h"
+
+/*	take care of missing u_int32_t definitions windoze/sun		*/
+#include "u_intxx.h"
 
 /*	needed for testing with 'printf'
 #include <stdio.h>
  */
-#include <endian.h>
 
-union n128
+/*	workaround for OS's without inet_aton			*/
+#include "xs_include/inet_aton.c"
+
+typedef union
 {
   u_int32_t     u[4];
   unsigned char c[16];
-};
+} n128;
 
-union n128 c128, a128;
+n128 c128, a128;
 
 u_int32_t wa[4], wb[4];		/*	working registers	*/
 
@@ -151,11 +154,15 @@ netswap_copy(void * dest, void * src, int len)
   register u_int32_t * d = dest, * s = src;
 
   for (/* -- */;len>0;len--) {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#ifdef MY_LITTLE_ENDIAN
     *d++ =  (((*s & 0xff000000) >> 24) | ((*s & 0x00ff0000) >>  8) | \
              ((*s & 0x0000ff00) <<  8) | ((*s & 0x000000ff) << 24));
 #else
+# ifdef MY_BIG_ENDIAN
     *d++ = *s;
+# else
+# error ENDIANness not defined
+# endif
 #endif
     s++;
   }
@@ -166,7 +173,7 @@ netswap_copy(void * dest, void * src, int len)
 void
 netswap(void * ap, int len)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#ifdef MY_LITTLE_ENDIAN
   register u_int32_t * a = ap;
   for (/* -- */;len >0;len--) {
     *a++ =  (((*a & 0xff000000) >> 24) | ((*a & 0x00ff0000) >>  8) | \

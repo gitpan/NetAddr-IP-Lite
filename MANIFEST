@@ -56,6 +56,10 @@ Util/t/simple_pack.t
 Util/t/sub128.t
 Util/Util.pm
 Util/Util.xs
+Util/typemap
+Util/siteconf
+Util/u_intxx.h
 Util/xs_include/miniSocket.inc
-Util/xs_include/my_handy.h
+Util/xs_include/inet_aton.c
+
 META.yml                                 Module meta-data (added by MakeMaker)

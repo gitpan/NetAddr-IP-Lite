@@ -10,6 +10,11 @@
  #   This program is free software; you can redistribute it and/or modify
  #   it under the same license and provisions as perl.
  #
+
+#ifndef Newx
+#define Newx(v,n,t) New(1138,v,n,t)
+#endif
+
  #########################################################################
  #                           Perl Kit, Version 5
  #

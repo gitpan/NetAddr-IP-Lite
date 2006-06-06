@@ -30,11 +30,12 @@ my %makeparms = (
     NAME		=> $pkg,
     VERSION_FROM	=> $module,	# finds $VERSION
     depend		=> {$cfile => 'xs_include/miniSocket.inc',
-					'xs_include/my_handy.h'
+					'localStuff.h'
 			},
+    LIBS		=> ['-lsocket -lnsl'],
     XS			=> {},
     C			=> [],
-    clean		=> { FILES    => "*.bs *.o *.c *~ tmp* Util_IS.pm"},
+    clean		=> { FILES    => "*.bs *.o *.c *~ tmp* Util_IS.pm localStuff.h config.log"},
     dist		=> {COMPRESS=>'gzip', SUFFIX=>'gz'}
 
 );
@@ -152,9 +153,18 @@ EOF
 
 sub MY::top_targets {
   package MY;
+  my $begin = q|
+config  :: localStuff.h
+	@$(NOOP)
+
+# siteconf CCname Cfile_ext OBJext EXEext "Cflags" "LDflags" "LDLOADLIBS"
+#
+localStuff.h :
+	./siteconf "$(CC)" ".c" "$(OBJ_EXT)" "$(EXE_EXT)" "$(CCFLAGS)" "$(LDflags)" "$(LDLOADLIBS)"
+|;
   my $inherited = shift->SUPER::top_targets(@_);
   $inherited =~ s/(pure_all\s+::.+)/$1 README/;
-  $inherited;
+  $begin . $inherited;
 }
 
 sub MY::post_constants {

@@ -6,10 +6,13 @@ Util.pm
 Util.xs
 Changes
 GPL
+siteconf
+typemap
+u_intxx.h
 docs/rfc1884.txt
 lib/NetAddr/IP/UtilPP.pm
+xs_include/inet_aton.c
 xs_include/miniSocket.inc
-xs_include/my_handy.h
 t/4to6.t
 t/add128.t
 t/addconst.t

@@ -12,7 +12,7 @@ require Exporter;
 
 @ISA = qw(Exporter);
 
-$VERSION = do { my @r = (q$Revision: 0.05 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.06 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 @EXPORT_OK = qw(
 	hasbits
@@ -357,7 +357,8 @@ Convert an ipv4 network address into an ipv6 network address.
 sub ipv4to6 {
   _deadlen(length($_[0]),32)
         if length($_[0]) != 4;
-  return pack('L3H8',0,0,0,unpack('H8',$_[0]));
+#  return pack('L3H8',0,0,0,unpack('H8',$_[0]));
+  return pack('L3a4',0,0,0,$_[0]);
 }
 
 =item * $ipv6naddr = mask4to6($netaddr);   
@@ -374,7 +375,8 @@ NOTE: returns the high 96 bits as one's
 sub mask4to6 {
   _deadlen(length($_[0]),32)
         if length($_[0]) != 4;
-  return pack('L3H8',0xffffffff,0xffffffff,0xffffffff,unpack('H8',$_[0]));
+#  return pack('L3H8',0xffffffff,0xffffffff,0xffffffff,unpack('H8',$_[0]));
+  return pack('L3a4',0xffffffff,0xffffffff,0xffffffff,$_[0]);
 }
 
 =item * $ipv6naddr = ipanyto6($netaddr);
@@ -391,7 +393,8 @@ sub ipanyto6 {
   my $naddr = shift;
   my $len = length($naddr);
   return $naddr if $len == 16;
-  return pack('L3H8',0,0,0,unpack('H8',$naddr))
+#  return pack('L3H8',0,0,0,unpack('H8',$naddr))
+  return pack('L3a4',0,0,0,$naddr)
 	if $len == 4;
   _deadlen($len,'32 or 128');
 }
@@ -410,7 +413,8 @@ sub maskanyto6 {
   my $naddr = shift;
   my $len = length($naddr);
   return $naddr if $len == 16;
-  return pack('L3H8',0xffffffff,0xffffffff,0xffffffff,unpack('H8',$naddr))
+#  return pack('L3H8',0xffffffff,0xffffffff,0xffffffff,unpack('H8',$naddr))
+  return pack('L3a4',0xffffffff,0xffffffff,0xffffffff,$naddr)
 	if $len == 4;
   _deadlen($len,'32 or 128');
 }
