@@ -1,5 +1,26 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+0.11  Wed Jun 14 14:53:21 PDT 2006
+	add 'sub new6' and related functionality to methods
+	that print or return v4/6 information or text.
+
+	add $self->{isv6} flag for hint to ipV6 status
+
+	corrected bug in sub num that miscalcluated the number
+	of IP's in a net for /31 /32
+
+0.10  Tue Jun 13 14:07:46 PDT 2006
+	bring 'sub new' into full compliance with NetAddr::IP,
+	correct compatibility with for ==,>,<,=>,>=,<=>,cmp
+	and update documentation to reflect actual implementation
+
+	add 'copy' function that return a completely new object
+
+	export (Zero Ones V4mask V4net)
+
+	update Util.pm v0.15 so shiftleft returns original
+	argument when the shift count is zero or undefined
+
 0.09  Tue Jun  6 08:37:01 PDT 2006
 	update Util/Makefile.PM to check for link libraries
 	that ExtUtils::MakeMaker does not find properly

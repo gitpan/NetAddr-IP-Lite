@@ -11,7 +11,7 @@ sub ok() {
   print 'ok ',$test++,"\n";
 }
 
-my $loip	= new NetAddr::IP::Lite('::1.2.3.4/120');		# same as 1.2.3.4/24
+my $loip	= new NetAddr::IP::Lite('1.2.3.4/24');
 my $hiip	= new NetAddr::IP::Lite('FF00::1:4/120');
 
 ## test	version lo

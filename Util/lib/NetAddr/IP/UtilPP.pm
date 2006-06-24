@@ -12,7 +12,7 @@ require Exporter;
 
 @ISA = qw(Exporter);
 
-$VERSION = do { my @r = (q$Revision: 0.06 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.07 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 @EXPORT_OK = qw(
 	hasbits
@@ -184,9 +184,9 @@ sub shiftleft {
   _deadlen(length($_[0]))
 	if length($_[0]) != 16;
   my($bits,$shifts) = @_;
-  $shifts = 1 unless defined $shifts;
-  die "Bad arg value for ".__PACKAGE__.":shiftleft, length should be 1 thru 128"
-	if $shifts < 1 || $shifts > 128;
+  return $bits unless $shifts;
+  die "Bad arg value for ".__PACKAGE__.":shiftleft, length should be 0 thru 128"
+	if $shifts < 0 || $shifts > 128;
   my @uint32t = unpack('N4',$bits);
   do {
     $bits = _128x2(\@uint32t);

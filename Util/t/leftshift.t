@@ -5,7 +5,7 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..8\n"; }
+BEGIN { $| = 1; print "1..9\n"; }
 END {print "not ok 1\n" unless $loaded;}
 
 use NetAddr::IP::Util qw(
@@ -31,7 +31,8 @@ sub ok {
 
 my @num = # input	shift	expected
 qw(
-	1::1		 none	2:0:0:0:0:0:0:2
+	1::1		 none	1:0:0:0:0:0:0:1
+	1::1		  0	1:0:0:0:0:0:0:1
 	1::1		  1	2:0:0:0:0:0:0:2
 	1::1		  2	4:0:0:0:0:0:0:4
 	1::1		  3	8:0:0:0:0:0:0:8

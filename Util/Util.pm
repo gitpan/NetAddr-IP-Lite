@@ -13,7 +13,7 @@ require Exporter;
 
 @ISA = qw(Exporter DynaLoader);
 
-$VERSION = do { my @r = (q$Revision: 0.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 my @export_ok = qw(
 	inet_aton
@@ -707,20 +707,16 @@ Thank you Larry for making PERL possible for all of us.
 
 Copyright 2003 - 2006, Michael Robinton <michael@bizsystems.com>
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License (except as noted
-otherwise in individuals sub modules)  published by
-the Free Software Foundation; either version 2 of the License, or 
-(at your option) any later version.
+LICENSE AND WARRANTY
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of 
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the  
-GNU General Public License for more details.
+This software is (c) Michael Robinton.  It can be used under the terms of
+the perl artistic license provided  that proper credit for the work of
+the  author is  preserved in  the form  of this  copyright  notice and
+license for this module.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+No warranty of any kind is  expressed or implied, by using it 
+you accept any and all the liability.
+
 
 =head1 AUTHOR
 

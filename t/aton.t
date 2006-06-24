@@ -1,8 +1,7 @@
 
 #use diagnostics;
 use NetAddr::IP::Util qw(
-	inet_ntoa
-	ipv6_n2x
+	inet_n2dx
 );
 use NetAddr::IP::Lite;
 
@@ -21,13 +20,13 @@ my $hiip	= new NetAddr::IP::Lite('FF00::4/120');
 ## test aton
 
 my $exp = 'FF00:0:0:0:0:0:0:4';
-my $txt = ipv6_n2x($hiip->aton);
+my $txt = inet_n2dx($hiip->aton);
 print "got: $txt, exp: $exp\nnot "
 	unless $txt eq $exp;
 &ok;
 
 $exp = '1.2.3.4';
-$txt = inet_ntoa($loip->aton);
+$txt = inet_n2dx($loip->aton);
 print "got: $txt, exp: $exp\nnot "
 	unless $txt eq $exp;
 &ok;

@@ -22,7 +22,7 @@ print 'got: ',$txt," exp: $exp\nnot "
 &ok;
 
 ## test	broadcast lo
-$exp = '1.2.3.255/24';
+$exp = '0:0:0:0:0:0:102:3FF/120';
 my $broad = $loip->broadcast;
 print 'got: ',$broad, " exp: $exp\nnot "
 	unless $broad eq $exp;

@@ -454,21 +454,23 @@ PPCODE:
 	}
 	else if (ix == 1) {
 	  if (items < 2) {
-	    i = 1;
+	    memcpy(wa,ap,16);
+	  }
+	  else if ((i = SvIV(ST(1))) == 0) {
+	    memcpy(wa,ap,16);
+	  }
+	  else if (i < 0 || i > 128) {
+	    croak("Bad arg value for %s, is %d, should be 0 thru 128",
+		"NetAddr::IP::Util::shiftleft",i);
 	  }
 	  else {
-	    i = SvIV(ST(1));
-	    if (i < 1 || i > 128) {
-	      croak("Bad arg value for %s, is %d, should be 1 thru 128",
-		"NetAddr::IP::Util::shiftleft",i);
-	    }
+	    netswap_copy(wa,ap,4);
+	    do {
+		_128x2(wa);
+		i--;
+	    } while (i > 0);
+	    netswap(wa,4);
 	  }
-	  netswap_copy(wa,ap,4);
-	  do {
-	    _128x2(wa);
-	    i--;
-	  } while (i > 0);
-	  netswap(wa,4);
 	}
 	else {
 	  memcpy(wa,ap,16);

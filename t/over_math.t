@@ -11,7 +11,7 @@ sub ok() {
   print 'ok ',$test++,"\n";
 }
 
-my $ip	= new NetAddr::IP::Lite('::4/120');		# same as 0.0.0.4/24
+my $ip	= new NetAddr::IP::Lite('0.0.0.4/24');
 
 ## test '+'
 my $exp = '0.0.0.132/24';

@@ -22,7 +22,7 @@ print 'got: ',$txt," exp: $exp\nnot "
 &ok;
 
 ## test	addr lo
-$exp = '1.2.3.4';
+$exp = '0:0:0:0:0:0:102:304';
 my $addr = $loip->addr;
 print "got: $addr, exp: $exp\nnot "
 	unless $addr eq $exp && ! ref $addr;

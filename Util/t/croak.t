@@ -155,7 +155,7 @@ print "expected a die from bad vector string length\nnot "
 &ok;
 
 ## test 30	shiftleft
-eval { shiftleft	('1234567890123456',0) };
+eval { shiftleft	('1234567890123456',-1) };
 print "expected a die from bad shift count specifier\nnot "
 	unless $@ && $@ =~ /Bad/;
 &ok;

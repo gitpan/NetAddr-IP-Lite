@@ -1,5 +1,9 @@
 Revision history for Perl extension NetAddr::IP::Util
 
+0.15  Tue Jun 13 14:42:34 PDT 2006
+	UtilPP.pm v0.07 & Util.xs 'shiftleft' so that the orignal
+	agrument is returned when the shift count is '0' or missing
+
 0.14  Tue Jun  6 08:37:01 PDT 2006
 	add logic to check LIBS => [-lfiles]
 	individually. ExtUtils::xxx does a bad job and

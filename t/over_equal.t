@@ -11,11 +11,11 @@ sub ok() {
   print 'ok ',$test++,"\n";
 }
 
-my $four	= new NetAddr::IP::Lite('::4');		# same as 0.0.0.4/32
+my $four	= new NetAddr::IP::Lite('0.0.0.4');		# same as 0.0.0.4/32
 my $four120	= new NetAddr::IP::Lite('::4/120');	# same as 0.0.0.4/24
 
 my $t432	= '0.0.0.4/32';
-my $t4120	= '0.0.0.4/24';
+my $t4120	= '0:0:0:0:0:0:0:4/120';
 
 ## test '""' overload
 my $txt = sprintf ("%s",$four120);

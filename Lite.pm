@@ -4,6 +4,7 @@ package NetAddr::IP::Lite;
 
 use Carp;
 use strict;
+#use diagnostics;
 #use warnings;
 use NetAddr::IP::Util qw(
 	inet_any2n
@@ -16,10 +17,29 @@ use NetAddr::IP::Util qw(
 	inet_n2dx
 	hasbits
 	bin2bcd
+	inet_aton
+	inet_any2n
+	ipv6_aton
+	ipv6_n2x
+	mask4to6
+	ipv4to6
 );
-use vars qw($Class $VERSION);
+use vars qw(@ISA @EXPORT_OK $Class $VERSION $isV6 $Accept_Binary_IP);
 
-$VERSION = do { my @r = (q$Revision: 0.09 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+require Exporter;
+
+@ISA = qw(Exporter);
+
+@EXPORT_OK = qw(Zero Ones V4mask V4net);
+
+# Set to true, to enable recognizing of ipV4 && ipV6 binary notation IP
+# addresses. Thanks to Steve Snodgrass for reporting. This can be done
+# at the time of use-ing the module. See docs for details.
+
+$Accept_Binary_IP = 0;
+
 
 =head1 NAME
 
@@ -27,7 +47,13 @@ NetAddr::IP::Lite - Manages IPv4 and IPv6 addresses and subnets
 
 =head1 SYNOPSIS
 
-  use NetAddr::IP::Lite;
+  use NetAddr::IP::Lite qw(
+	Zeros
+	Ones
+	V4mask
+	V4net
+	:aton
+  );
 
   my $ip = new NetAddr::IP::Lite '127.0.0.1';
 
@@ -39,6 +65,13 @@ NetAddr::IP::Lite - Manages IPv4 and IPv6 addresses and subnets
 
 				# This prints 127.0.0.1/32
   print "You can also say $ip...\n";
+
+  The following four functions return ipV6 representations of:
+
+  ::					   = Zeros();
+  FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF: = Ones();
+  FFFF:FFFF:FFFF:FFFF:FFFF:FFFF::	   = V4mask();
+  ::FFFF:FFFF				   = V4net();
 
 =head1 INSTALLATION
 
@@ -108,9 +141,7 @@ use overload
 
     '--'	=> \&minusminus,
 
-    "="		=> sub {
-	return _new($_[0],$_[0]->{addr}, $_[0]->{mask});
-    },
+    "="		=> \&copy,
 
     '""'	=> sub { $_[0]->cidr(); },
 
@@ -126,33 +157,40 @@ use overload
 	$_[0]->cidr eq $_[1]->cidr;
     },
 
-    '>'		=> sub {	# reverse operands, carry = 0
-	return ! scalar sub128($_[1]->{addr},$_[0]->{addr});
+    '>'		=> sub {
+	return &comp_addr > 0 ? 1 : 0;
     },
 
-    '<'		=> sub {	# carry = 0
-	return ! scalar sub128($_[0]->{addr},$_[1]->{addr});
+    '<'		=> sub {
+	return &comp_addr < 0 ? 1 : 0;
     },
 
-    '>='	=> sub {	# carry = 1
-	return scalar sub128($_[0]->{addr},$_[1]->{addr});
+    '>='	=> sub {
+	return &comp_addr < 0 ? 0 : 1;
     },
 
-    '<='	=> sub {	# reverse operands, carry = 1
-	return scalar sub128($_[1]->{addr},$_[0]->{addr});
+    '<='	=> sub {
+	return &comp_addr > 0 ? 0 : 1;
     },
 
-    '<=>'		=> sub {
-	my($carry,$rv) = sub128($_[0]->{addr},$_[1]->{addr});
-	return -1 unless $carry;
-	return (hasbits($rv)) ? 1 : 0;
-    },
+    '<=>'	=> \&comp_addr_mask,
 
-    'cmp'		=> sub {
-	my($carry,$rv) = sub128($_[0]->{addr},$_[1]->{addr});
-	return -1 unless $carry;
-	return (hasbits($rv)) ? 1 : 0;
-    };
+    'cmp'	=> \&comp_addr_mask;
+
+sub comp_addr_mask {
+  my($c,$rv) = sub128($_[0]->{addr},$_[1]->{addr});
+  return -1 unless $c;
+  return 1 if hasbits($rv);
+  ($c,$rv) = sub128($_[0]->{mask},$_[1]->{mask});
+  return -1 unless $c;
+  return hasbits($rv) ? 1 : 0;
+}
+
+sub comp_addr {
+  my($c,$rv) = sub128($_[0]->{addr},$_[1]->{addr});
+  return -1 unless $c;
+  return hasbits($rv) ? 1 : 0;
+}
 
 =pod
 
@@ -162,6 +200,20 @@ use overload
 
 Has been optimized to copy one NetAddr::IP::Lite object to another very quickly.
 
+=item B<C<-E<gt>copy()>>
+
+The B<assignment (C<=>)> operation is only put in to operation when the
+copied object is further mutated by another overloaded operation. See
+L<overload> B<SPECIAL SYMBOLS FOR "use overload"> for details.
+
+B<C<-E<gt>copy()>> actually creates a new object when called.
+
+=cut
+
+sub copy {
+	return _new($_[0],$_[0]->{addr}, $_[0]->{mask});
+}
+
 =item B<Stringification>
 
 An object can be used just as a string. For instance, the following code
@@ -170,6 +222,11 @@ An object can be used just as a string. For instance, the following code
         print "$ip\n";
 
 Will print the string 192.168.1.123/32.
+
+	my $ip = new6 NetAddr::IP::Lite '192.168.1.123';
+	print "$ip\n";
+
+Will print the string 
 
 =item B<Equality>
 
@@ -191,9 +248,9 @@ the operands is equal.
 
 Internally, all network objects are represented in 128 bit format.
 The numeric representation of the network is compared through the 
-corresponding operation. The netmask is
-ignored for these comparisons, as there is no standard criteria to say
-wether 10/8 is larger than 10/10 or not.
+corresponding operation. Comparisons are tried first on the address portion
+of the object and if that is equal then the cidr portion of the masks are
+compared.
 
 =item B<Addition of a constant>
 
@@ -303,9 +360,11 @@ sub minusminus {
 sub _new ($$$) {
   my $proto = shift;
   my $class = ref($proto) || die "reference required";
+  $proto = $proto->{isv6};
   my $self = {
 	addr	=> $_[0],
 	mask	=> $_[1],
+	isv6	=> $proto,
   };
   return bless $self, $class;
 }
@@ -318,17 +377,58 @@ sub _new ($$$) {
 
 =over
 
-=item C<-E<gt>new([$addr, [ $mask]])>
+=item C<-E<gt>new([$addr, [ $mask|IPv6 ]])>
 
-This method creates a new address with the supplied address in
+=item C<-E<gt>new6([$addr, [ $mask]])>
+
+These methods creates a new address with the supplied address in
 C<$addr> and an optional netmask C<$mask>, which can be omitted to get
 a /32 or /128 netmask for IPv4 / IPv6 addresses respectively
 
-C<$addr> can be any of the following:
+C<-E<gt>new6> marks the address as being in ipV6 address space even if the
+format would suggest otherwise.
 
+  i.e.	->new6('1.2.3.4') will result in ::102:304
+
+  addresses submitted to ->new in ipV6 notation will
+  remain in that notation permanently. i.e.
+	->new('::1.2.3.4') will result in ::102:304
+  whereas new('1.2.3.4') would print out as 1.2.3.4
+
+  See "STRINGIFICATION" below.
+
+C<$addr> can be almost anything that can be resolved to an IP address
+in all the notations I have seen over time. It can optionally contain
+the mask in CIDR notation.
+
+B<prefix> notation is understood, with the limitation that the range
+speficied by the prefix must match with a valid subnet.
+
+Addresses in the same format returned by C<inet_aton> or
+C<gethostbyname> can also be understood, although no mask can be
+specified for them. The default is to not attempt to recognize this
+format, as it seems to be seldom used.
+
+To accept addresses in that format, invoke the module as in
+
+  use NetAddr::IP::Lite ':aton'
+
+If called with no arguments, 'default' is assumed.
+
+C<$addr> can be any of the following and possibly more...
+
+  n.n
+  n.n/mm
+  n.n.n
+  n.n.n/mm
   n.n.n.n
   n.n.n.n/mm		32 bit cidr notation
   n.n.n.n/m.m.m.m
+  loopback, localhost, broadcast, any, default
+  x.x.x.x/host
+  0xABCDEF, 0b111111000101011110, (a bcd number)
+  a netaddr as returned by 'inet_aton'
+
 
 Any RFC1884 notation
 
@@ -340,41 +440,268 @@ Any RFC1884 notation
   x:x:x:x:x:x:x:x
   x:x:x:x:x:x:x:x/mmm
   x:x:x:x:x:x:x:x/m:m:m:m:m:m:m:m any RFC1884 notation
+  loopback, localhost, unspecified, any, default
+  ::x:x/host
+  0xABCDEF, 0b111111000101011110 within the limits
+  of perl's number resolution
+  123456789012  a 'big' bcd number i.e. Math::BigInt
 
 If called with no arguments, 'default' is assumed.
 
 =cut
 
-sub new {
-  my($proto,$ip,$mask) = @_;
-  return undef unless $ip;
-# save Class for inheritance
-  $Class = ref($proto) || $proto;
-  my($naddr,$nmask);
-  if ($ip =~ m|^([0-9a-fA-F:.]+)/(\d{1,3})$|) {
-    return undef unless ($naddr = inet_any2n($1));
-    $mask = $2;
-    $mask = $ip =~ /:/ ? 128 - $mask : 32 - $mask;
-    return undef if $mask < 0 || $mask > 128;
-    $nmask = shiftleft(Ones,$mask);
-  } elsif ($ip =~ m|^([0-9a-fA-F:.]+)/([0-9a-fA-F:.]+)$|) {
+my %fip4 = (
+        default         => Zero,
+        any             => Zero,
+        broadcast       => inet_any2n('255.255.255.255'),
+        loopback        => inet_any2n('127.0.0.1'),
+	unspecified	=> undef,
+);
+my %fip4m = (
+        default         => Zero,
+        any             => Zero,
+        broadcast       => Ones,
+        loopback        => mask4to6(inet_aton('255.0.0.0')),
+	unspecified	=> undef,	# not applicable for ipV4
+	host		=> Ones,
+);
 
-    return undef unless ($naddr = inet_any2n($1));
-    return undef unless ($nmask = inet_any2n($2));
-    $nmask |= V4mask if isIPv4($naddr);
-  } else {
-    return undef unless ($naddr = inet_any2n($ip));
-    if ($mask) {
-      return undef unless ($nmask = inet_any2n($mask));
-      $nmask |= V4mask if isIPv4($naddr);
-    } else {
-      $nmask = Ones;
+my %fip6 = (
+	default         => Zero,
+	any             => Zero,
+	broadcast       => undef,	# not applicable for ipV6
+	loopback        => inet_any2n('::1'),
+	unspecified     => Zero,
+);
+
+my %fip6m = (
+	default         => Zero,
+	any             => Zero,
+	broadcast       => undef,	# not applicable for ipV6
+	loopback        => Ones,
+	unspecified     => Ones,
+	host		=> Ones,
+);
+
+my $ff000000 = pack('L3N',0xffffffff,0xffffffff,0xffffffff,0xFF000000);
+my $ffff0000 = pack('L3N',0xffffffff,0xffffffff,0xffffffff,0xFFFF0000);
+my $ffffff00 = pack('L3N',0xffffffff,0xffffffff,0xffffffff,0xFFFFFF00);
+
+sub _obits ($$) {
+    my($lo,$hi) = @_;
+
+    return 0xFF if $lo == $hi;
+    return (~ ($hi ^ $lo)) & 0xFF;
+}
+
+sub new($;$$) {
+  $isV6	= 0;
+  goto &_xnew;
+}
+
+sub new6($;$$) { 
+  $isV6	= 1;
+  goto &_xnew;
+}
+
+sub _xnew($;$$) {
+  my $proto	= shift;
+  $Class = ref $proto || $proto || __PACKAGE__;
+  my $ip	= lc shift;
+  $ip = 'default' unless defined $ip;
+  my $hasmask = 1;
+  my($mask,$tmp);
+
+  while (1) {
+    unless (@_) {
+      if ($ip =~ m!^(.+)/(.+)$!) {
+	$ip	= $1;
+	$mask	= $2;
+      } elsif (grep($ip eq $_,qw(default any broadcast loopback unspecified))) {
+	$isV6 = 1 if $ip eq 'unspecified';
+	if ($isV6) {
+	  $mask = $fip6m{$ip};
+	  return undef unless defined ($ip = $fip6{$ip});
+	} else {
+	  $mask	= $fip4m{$ip};
+	  return undef unless defined ($ip = $fip4{$ip});
+	}
+	last;
+      }
     }
-  }
-  return undef if notcontiguous($nmask);
+    elsif (defined $_[0]) {
+      if ($_[0] =~ /ipv6/i || $isV6) {
+	if (grep($ip eq $_,qw(default any loopback unspecified))) {
+	  $mask	= $fip6m{$ip};
+	  $ip	= $fip6{$ip};
+	  last;
+	} else {
+	  return undef;
+        }
+      } else {
+	$mask = lc $_[0];
+      }
+    }
+    unless (defined $mask) {
+      $hasmask	= 0;
+      $mask	= 'host';
+    }
+
+# parse mask
+    if ($mask =~ /^(\d+)$/) {
+      if (index($ip,':') < 0) {			# is ipV4
+	if ($1 == 32) {				# cidr 32
+	  $mask = Ones;
+	}
+	elsif ($mask < 32) {			# small cidr
+	  $mask = shiftleft(Ones,32 -$1);
+	} else {				# is a binary mask
+	  $mask = pack('L3N',0xffffffff,0xffffffff,0xffffffff,$1);
+	}
+      } else {					# is ipV6
+	$isV6	= 1;
+	if ($1 == 128) {			# cidr 128
+	  $mask = Ones;
+	}
+	elsif ($mask < 128) {			# small cidr
+	  $mask = shiftleft(Ones,128 -$1);
+	} else {				# is a binary mask
+	  $mask = bcd2bin($1);
+	}
+      }
+    } elsif ($mask =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) { # ipv4 form of mask
+      return undef unless defined ($mask = inet_aton($mask));
+      $mask = mask4to6($mask);
+    } elsif (grep($mask eq $_,qw(default any broadcast loopback unspecified host))) {
+      if (index($ip,':') < 0 && ! $isV6) {
+	return undef unless defined ($mask = $fip4m{$mask});
+      } else {
+	return undef unless defined ($mask = $fip6m{$mask});
+      }
+    } else {
+      return undef unless defined ($mask = ipv6_aton($mask));	# try ipv6 form of mask
+    }
+
+# parse IP
+
+    if (index($ip,':') < 0) {				# ipv4 address
+      if ($ip =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
+	;	# the common case
+      }
+      elsif (grep($ip eq $_,qw(default any broadcast loopback))) {
+	return undef unless defined ($ip = $fip4{$ip});
+	last;
+      }
+      elsif ($ip =~ m/^(\d+)\.(\d+)$/) {
+	$ip = ($hasmask)
+		? "${1}.${2}.0.0"
+		: "${1}.0.0.${2}";
+      }
+      elsif ($ip =~ m/^(\d+)\.(\d+)\.(\d+)$/) {
+	$ip = ($hasmask)
+		? "${1}.${2}.${3}.0"
+		: "${1}.${2}.0.${3}";
+      }
+      elsif ($ip =~ /^(\d+)$/ && $hasmask && $1 >= 0 and $1 < 256) { # pure numeric
+	$ip = sprintf("%d.0.0.0",$1);
+      }
+      elsif ($ip =~ /^0[xb]\d+$/ && $hasmask &&
+		(($tmp = eval "$ip") || 1) &&
+		$tmp >= 0 && $tmp < 256) {
+        $ip = sprintf("%d.0.0.0",$tmp);
+      }
+      elsif ($ip =~ /^-?\d+$/) {
+	$ip += 2 ** 32 if $ip < 0;
+	$ip = pack('L3N',0,0,0,$ip);
+	last;
+      }
+      elsif ($ip =~ /^-?0[xb]\d+$/) {
+	$ip = eval "$ip";
+	$ip = pack('L3N',0,0,0,$ip);
+	last;
+      }
+
+#	notations below include an implicit mask specification
+
+      elsif ($ip =~ m/^(\d+)\.$/) {
+	$ip = "${1}.0.0.0";
+	$mask = $ff000000;
+      }
+      elsif ($ip =~ m/^(\d+)\.(\d+)-(\d+)\.?$/ && $2 <= $3 && $3 < 256) {
+	$ip = "${1}.${2}.0.0";
+	$mask = pack('L3C4',0xffffffff,0xffffffff,0xffffffff,255,_obits($2,$3),0,0);
+      }
+      elsif ($ip =~ m/^(\d+)-(\d+)\.?$/ and $1 <= $2 && $2 < 256) {
+	$ip = "${1}.0.0.0";
+	$mask = pack('L3C4',0xffffffff,0xffffffff,0xffffffff,_obits($1,$2),0,0,0)
+      }
+      elsif ($ip =~ m/^(\d+)\.(\d+)\.$/) {
+	$ip = "${1}.${2}.0.0";
+	$mask = $ffff0000;
+      }
+      elsif ($ip =~ m/^(\d+)\.(\d+)\.(\d+)-(\d+)\.?$/ && $3 <= $4 && $4 < 256) {
+	$ip = "${1}.${2}.${3}.0";
+	$mask = pack('L3C4',0xffffffff,0xffffffff,0xffffffff,255,255,_obits($3,$4),0);
+      }
+      elsif ($ip =~ m/^(\d+)\.(\d+)\.(\d+)\.$/) {
+	$ip = "${1}.${2}.${3}.0";
+	$mask = $ffffff00;
+      }
+      elsif ($ip =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)-(\d+)$/ && $4 <= $5 && $5 < 256) {
+	$ip = "${1}.${2}.${3}.${4}";
+	$mask = pack('L3C4',0xffffffff,0xffffffff,0xffffffff,255,255,255,_obits($4,$5));
+      }
+      elsif ($ip =~ m/^(\d+\.\d+\.\d+\.\d+)
+		\s*-\s*(\d+\.\d+\.\d+\.\d+)$/x) {
+	return undef unless ($ip = inet_aton($1));
+	return undef unless ($tmp = inet_aton($2));
+# check for left side greater than right side
+# save numeric difference in $mask
+	return undef if ($tmp = unpack('N',$tmp) - unpack('N',$ip)) < 0;
+	$ip = ipv4to6($ip);
+	$tmp = pack('L3N',0,0,0,$tmp);
+	$mask = ~$tmp;
+	return undef if notcontiguous($mask);
+# check for non-aligned left side
+	return undef if hasbits($ip & $tmp);
+	last;
+      }
+      elsif (($tmp = gethostbyname($ip)) && $tmp ne pack('L',0) ) {
+	$ip = ipv4to6($tmp);
+	last;
+      }
+      elsif ($Accept_Binary_IP && ! $hasmask) {
+	if (length($ip) == 4) {
+	  $ip = ipv4to6($ip);
+	} elsif (length($ip) == 16) {
+	  $isV6 = 1;
+	} else {
+	  return undef;
+	}
+	last;
+      } else {
+	return undef;
+      }
+      return undef unless defined ($ip = inet_aton($ip));
+      $ip = ipv4to6($ip);
+      last;
+    }
+########## continuing
+    else {						# ipv6 address
+      $isV6 = 1;
+      last if defined ($ip = ipv6_aton($ip));
+      last if grep($ip eq $_,qw(default any loopback unspecified)) &&
+		defined ($ip = $fip6{$ip});
+      return undef;
+    }
+  } # end while (1)
+
+  return undef if notcontiguous($mask);			# invalid if not contiguous
+  
   my $self = {
-	addr	=> $naddr,
-	mask	=> $nmask,
+	addr	=> $ip,
+	mask	=> $mask,
+	isv6	=> $isV6,
   };
   return bless $self, $Class;
 }
@@ -389,8 +716,9 @@ the hosts in a given subnet.
 =cut
 
 sub broadcast ($) {
-    my $self	= shift;
-    return _new($self,$self->{addr} | ~ $self->{mask},$self->{mask});
+  my $ip = _new($_[0],$_[0]->{addr} | ~$_[0]->{mask},$_[0]->{mask});
+  $ip->{addr} &= V4net unless $ip->{isv6};
+  return $ip;
 }
 
 =item C<-E<gt>network()>
@@ -402,8 +730,7 @@ netmask are zero. Normally this is used to refer to a subnet.
 =cut
 
 sub network ($) {
-  my $self = shift;
-  return _new($self,$self->{addr} & $self->{mask},$self->{mask});
+  return _new($_[0],$_[0]->{addr} & $_[0]->{mask},$_[0]->{mask});
 }
 
 =item C<-E<gt>addr()>
@@ -411,26 +738,30 @@ sub network ($) {
 Returns a scalar with the address part of the object as an IPv4 or IPv6 text
 string as appropriate. This is useful for printing or for passing the address
 part of the NetAddr::IP::Lite object to other components that expect an IP
-address.
+address. If the object is an ipV6 address or was created using ->new6($ip)
+it will be reported in ipV6 hex format otherwise it will be reported in dot
+quad format only if it resides in ipV4 address space.
 
 =cut
 
 sub addr ($) {
-  return inet_n2dx($_[0]->{addr});
+  return ($_[0]->{isv6})
+	? ipv6_n2x($_[0]->{addr})
+	: inet_n2dx($_[0]->{addr});
 }
 
 =item C<-E<gt>mask()>
 
 Returns a scalar with the mask as an IPv4 or IPv6 text string as
-appropriate.
+described above.
 
 =cut
 
 sub mask ($) {
-  my $self	= shift;
-  my $mask = isIPv4($self->{addr})
-	? $self->{mask} & V4net
-	: $self->{mask};
+  return ipv6_n2x($_[0]->{mask}) if $_[0]->{isv6};
+  my $mask = isIPv4($_[0]->{addr})
+	? $_[0]->{mask} & V4net
+	: $_[0]->{mask};
   return inet_n2dx($mask);
 }
 
@@ -441,23 +772,22 @@ Returns a scalar the number of one bits in the mask.
 =cut
 
 sub masklen ($) {
-  my $self = shift;
-  my $len = (notcontiguous($self->{mask}))[1];
-  return isIPv4($self->{addr})
+  my $len = (notcontiguous($_[0]->{mask}))[1];
+  return 0 unless $len;
+  return $len if $_[0]->{isv6};
+  return isIPv4($_[0]->{addr})
 	? $len -96
 	: $len;
 }
 
 =item C<-E<gt>bits()>
 
-Returns the wide of the address in bits. Normally 32 for v4 and 128 for v6.
+Returns the width of the address in bits. Normally 32 for v4 and 128 for v6.
 
 =cut
 
 sub bits {
-  return isIPv4($_[0]->{addr})
-	? 32
-	: 128;
+  return $_[0]->{isv6} ? 128 : 32;
 }
 
 =item C<-E<gt>version()>
@@ -468,35 +798,36 @@ either 4 or 6.
 =cut
 
 sub version {
-  return isIPv4($_[0]->{addr})
-	? 4
-	: 6;
+  my $self = shift;
+  return $self->{isv6} ? 6 : 4;
 }
 
 =item C<-E<gt>cidr()>
 
 Returns a scalar with the address and mask in CIDR notation. A
 NetAddr::IP::Lite object I<stringifies> to the result of this function.
+(see comments about ->new6() and ->addr() for output formats)
 
 =cut
 
 sub cidr ($) {
-    my $self	= shift;
-    return $self->addr . '/' . $self->masklen;
+  return $_[0]->addr . '/' . $_[0]->masklen;
 }
 
 =item C<-E<gt>aton()>
 
 Returns the address part of the NetAddr::IP::Lite object in the same format
-as the C<inet_aton()> or C<ipv6_aton> function respectively.
+as the C<inet_aton()> or C<ipv6_aton> function respectively. If the object
+was created using ->new6($ip), the address returned will always be in ipV6
+format, even for addresses in ipV4 address space.
 
 =cut
 
 sub aton {
-  my $self = shift;
-  return isIPv4($self->{addr})
-	? ipv6to4($self->{addr})
-	: $self->{addr};
+  return $_[0]->{addr} if $_[0]->{isv6};
+  return isIPv4($_[0]->{addr})
+	? ipv6to4($_[0]->{addr})
+	: $_[0]->{addr};
 }
 
 =item C<-E<gt>range()>
@@ -507,8 +838,7 @@ separated by a dash and spaces. This is called range notation.
 =cut
 
 sub range ($) {
-    my $self = shift;
-    return $self->network->addr . ' - ' . $self->broadcast->addr;
+  return $_[0]->network->addr . ' - ' . $_[0]->broadcast->addr;
 }
 
 =item C<-E<gt>numeric()>
@@ -525,21 +855,19 @@ subnet.
 =cut
 
 sub numeric ($) {
-  my $self = shift;
-  my $n = $self->aton;
   if (wantarray) {
-    if (isIPv4($self->{addr})) {
-      return (	sprintf("%u",unpack('N',ipv6to4($self->{addr}))),
-		sprintf("%u",unpack('N',ipv6to4($self->{mask}))));
+    if (! $_[0]->{isv6} && isIPv4($_[0]->{addr})) {
+      return (	sprintf("%u",unpack('N',ipv6to4($_[0]->{addr}))),
+		sprintf("%u",unpack('N',ipv6to4($_[0]->{mask}))));
     }
     else {
-      return (	bin2bcd($self->{addr}),
-		bin2bcd($self->{mask}));
+      return (	bin2bcd($_[0]->{addr}),
+		bin2bcd($_[0]->{mask}));
     }
   }
-  return isIPv4($self->{addr})
-    ? sprintf("%u",unpack('N',ipv6to4($self->{addr})))
-    : bin2bcd($self->{addr});
+  return (! $_[0]->{isv6} && isIPv4($_[0]->{addr}))
+    ? sprintf("%u",unpack('N',ipv6to4($_[0]->{addr})))
+    : bin2bcd($_[0]->{addr});
 }
 
 =item C<$me-E<gt>contains($other)>
@@ -564,9 +892,12 @@ are not both C<NetAddr::IP::Lite> objects.
 
 sub within ($$) {
   return undef unless ref($_[0]) eq $Class && ref($_[1]) eq $Class;
-  my $net = $_[1]->{addr} & $_[1]->{mask};
-  my $brd = $_[1]->{addr} | ~ $_[1]->{mask};
-  return (sub128($_[0]->{addr},$net) && sub128($brd,$_[0]->{addr}))
+  return 1 unless hasbits($_[1]->{mask});	# 0x0 contains everything
+  my $netme	= $_[0]->{addr} & $_[0]->{mask};
+  my $brdme	= $_[0]->{addr} | ~ $_[0]->{mask};
+  my $neto	= $_[1]->{addr} & $_[1]->{mask};
+  my $brdo	= $_[1]->{addr} | ~ $_[1]->{mask};
+  return (sub128($netme,$neto) && sub128($brdo,$brdme))
 	? 1 : 0;
 }
 
@@ -578,8 +909,7 @@ the subnet (ie, the first host address).
 =cut
 
 sub first ($) {
-    my $self	= shift;
-    return $self->network + 1;
+  return $_[0]->network + 1;
 }
 
 =item C<-E<gt>last()>
@@ -590,8 +920,7 @@ the subnet (ie, one less than the broadcast address).
 =cut
 
 sub last ($) {
-    my $self	= shift;
-    return $self->broadcast - 1;
+  return $_[0]->broadcast - 1;
 }
 
 =item C<-E<gt>nth($index)>
@@ -604,38 +933,48 @@ C<undef> is returned.
 =cut
 
 sub nth ($$) {
-    my $self    = shift;
-    my $count   = shift;
+  my $self    = shift;
+  my $count   = shift;
 
-    return undef if ($count < 1 or $count > $self->num ());
-    return $self->network + $count;
+  return undef if ($count < 1 or $count > $self->num ());
+  return $self->network + $count;
 }
 
 =item C<-E<gt>num()>
 
 Returns the number of useable IP addresses within the
-subnet, not counting the broadcast address.
+subnet, not counting the broadcast address. 
 
 =cut
 
 sub num ($) {
-    my $self	= shift;
-    my $n = 128 - (notcontiguous($self->{mask}))[1];
-    my $addrs = (2 ** $n) -1;
-    return ($addrs > 2)
-	? $addrs
-	: 1;
+  my @net = unpack('L3N',$_[0]->{mask} ^ Ones);
+  return $net[3] if $net[3];
+  return 4294967295 if $net[0] || $net[1] || $net[2]; # 2**32 -1
+  return 0;
 }
-
-1;
 
 =pod
 
 =back
 
-=head2 EXPORT
+=cut
 
-None by default.
+sub import {
+  if (grep { $_ eq ':aton' } @_) {
+    $Accept_Binary_IP = 1;
+    @_ = grep { $_ ne ':aton' } @_;
+  }
+  NetAddr::IP::Lite->export_to_level(1, @_);
+}
+
+=head1 EXPORT_OK
+
+	Zero
+	Ones
+	V4mask
+	V4net
+	:aton
 
 =head1 AUTHOR
 
