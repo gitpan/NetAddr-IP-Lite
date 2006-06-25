@@ -4,9 +4,8 @@
 ######################### We start with some black magic to print on failure.
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
-
-BEGIN { $| = 1; print "1..106\n"; }
-END {print "not ok 1\n" unless $loaded;}
+$| = 1;
+END {print "1..1\nnot ok 1\n" unless $test;}
 
 use NetAddr::IP::Util qw(
 	ipv6_aton
@@ -14,15 +13,7 @@ use NetAddr::IP::Util qw(
 	hasbits
 );
 
-$loaded = 1;
-print "ok 1\n";
-######################### End of black magic.
-
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
-
-$test = 2;
+$test = 1;
 
 sub ok {
   print "ok $test\n";
@@ -136,7 +127,15 @@ my @num = qw	# input
 	::20
 	::10
 	::1
+	::8000:0:0:0:0
+	::8000:0:0:0:0:0
+	::8000:0:0:0:0:0:0
+	8000:0:0:0:0:0:0:0
 );
+# Insert your test code below (better if it prints "ok 13"
+# (correspondingly "not ok 13") depending on the success of chunk 13
+# of the test code):
+print '1..',(scalar @num), "\n";
 
 foreach (@num) {
   my $bstr = ipv6_aton($_);

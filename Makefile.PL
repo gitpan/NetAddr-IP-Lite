@@ -11,8 +11,8 @@ my $module = $& .'.pm';
 my %makeparms = (
     'NAME'		=> $pkg,
     'VERSION_FROM'	=> $module, # finds $VERSION
-#    'PREREQ_PM'		=> {
-#			},
+    'PREREQ_PM'		=> {Test::More	=> 0,
+			},
     'clean'		=> { FILES    => "*~ tmp*"},
     'dist'		=> {COMPRESS=>'gzip', SUFFIX=>'gz'}
 );

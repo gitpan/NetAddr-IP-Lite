@@ -26,6 +26,7 @@ t/over_comp.t
 t/over_copy.t
 t/over_equal.t
 t/over_math.t
+t/pathological.t
 t/range.t
 t/relops.t
 t/v4-aton.t
@@ -61,6 +62,7 @@ Util/t/4to6.t
 Util/t/add128.t
 Util/t/addconst.t
 Util/t/anyto6.t
+Util/t/badd.t
 Util/t/bcd2bin.t
 Util/t/bcdn2bin.t
 Util/t/bin.t

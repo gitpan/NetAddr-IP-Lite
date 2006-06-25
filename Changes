@@ -1,5 +1,13 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+0.12  Sun Jun 25 16:13:00 PDT 2006
+	imported missing 'bcd2bin'
+
+        fixed Util->new() issues with long digit strings 
+	->new('::fffff') and non hex digits ->new('::foo'). 
+        Thanks to Radoslaw Zielinski <radek42@gmail.com>
+        for spotting these 3 bugs
+
 0.11  Wed Jun 14 14:53:21 PDT 2006
 	add 'sub new6' and related functionality to methods
 	that print or return v4/6 information or text.

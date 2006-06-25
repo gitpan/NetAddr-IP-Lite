@@ -1,5 +1,11 @@
 Revision history for Perl extension NetAddr::IP::Util
 
+0.16  Sun Jun 25 16:13:00 PDT 2006
+	fixed ->new() issues with long digit strings ->new('::fffff')
+	and non hex digits ->new('::foo'). 
+	Thanks to Radoslaw Zielinski <radek42@gmail.com>
+	for spotting those bugs
+
 0.15  Tue Jun 13 14:42:34 PDT 2006
 	UtilPP.pm v0.07 & Util.xs 'shiftleft' so that the orignal
 	agrument is returned when the shift count is '0' or missing

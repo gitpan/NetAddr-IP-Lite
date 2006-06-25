@@ -31,6 +31,8 @@ my %makeparms = (
     VERSION_FROM	=> $module,	# finds $VERSION
     depend		=> {$cfile => q[xs_include/miniSocket.inc localStuff.h],
 			},
+    PREREQ_PM		=> {Test::More	=> 0,
+			},
     LIBS		=> [],
     XS			=> {},
     C			=> [],

@@ -17,6 +17,7 @@ t/4to6.t
 t/add128.t
 t/addconst.t
 t/anyto6.t
+t/badd.t
 t/bcd2bin.t
 t/bcdn2bin.t
 t/bin.t

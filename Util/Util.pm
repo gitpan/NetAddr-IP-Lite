@@ -13,7 +13,7 @@ require Exporter;
 
 @ISA = qw(Exporter DynaLoader);
 
-$VERSION = do { my @r = (q$Revision: 0.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 my @export_ok = qw(
 	inet_aton
@@ -267,22 +267,23 @@ sub ipv6_aton {
     return undef if $1 > 255 || $2 > 255 || $3 > 255 || $4 > 255;
     $ipv6 = sprintf("%s:%X%02X:%X%02X",$`,$1,$2,$3,$4);			# convert to pure hex
   }
-  return undef unless ($ipv6 =~ /(?:::|:[a-zA-Z0-9]+)$/);		# pure hex "?:" no clustering
-  my $c = $ipv6 =~ tr/:/:/;						# count the colons
+  my $c;
+  return undef if 
+	$ipv6 =~ /[^:0-9a-fA-F]/ ||			# non-hex character
+	(($c = $ipv6) =~ s/::/x/ && $c =~ /(?:x|:):/) ||	# double :: ::?
+	$ipv6 =~ /[0-9a-fA-F]{5,}/;			# more than 4 digits
+  $c = $ipv6 =~ tr/:/:/;				# count the colons
   return undef if $c < 7 && $ipv6 !~ /::/;
-  if ($c > 7) {								# strip leading or trailing ::
-    while ($ipv6 =~ s/^::/:/) {}
-    while ($ipv6 =~ s/::$/:/) {}
+  if ($c > 7) {						# strip leading or trailing ::
+    return undef unless
+	$ipv6 =~ s/^::/:/ ||
+	$ipv6 =~ s/::$/:/;
+    return undef if --$c > 7;
   }
-  while ($c++ < 7) {							# expand compressed fields
+  while ($c++ < 7) {					# expand compressed fields
     $ipv6 =~ s/::/:::/;
   }
-  if ($ipv6 =~ /^:/) {
-    $ipv6 = 0 . $ipv6;
-  }
-  elsif ($ipv6 =~ /:$/) {
-    $ipv6 .= 0;
-  }
+  $ipv6 .= 0 if $ipv6 =~ /:$/;
   my @hex = split(/:/,$ipv6);
   foreach(0..$#hex) {
     $hex[$_] = hex($hex[$_] || 0);

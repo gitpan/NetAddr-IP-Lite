@@ -17,6 +17,7 @@ use NetAddr::IP::Util qw(
 	inet_n2dx
 	hasbits
 	bin2bcd
+	bcd2bin
 	inet_aton
 	inet_any2n
 	ipv6_aton
@@ -26,7 +27,7 @@ use NetAddr::IP::Util qw(
 );
 use vars qw(@ISA @EXPORT_OK $Class $VERSION $isV6 $Accept_Binary_IP);
 
-$VERSION = do { my @r = (q$Revision: 0.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 require Exporter;
 
@@ -689,7 +690,10 @@ sub _xnew($;$$) {
 ########## continuing
     else {						# ipv6 address
       $isV6 = 1;
-      last if defined ($ip = ipv6_aton($ip));
+      if (defined ($tmp = ipv6_aton($ip))) {
+	$ip = $tmp;
+	last;
+      }
       last if grep($ip eq $_,qw(default any loopback unspecified)) &&
 		defined ($ip = $fip6{$ip});
       return undef;
