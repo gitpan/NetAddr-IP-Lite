@@ -1605,9 +1605,10 @@ echo $ECHO_N "checking for inet_aton $ECHO_C" >&6
 int
 main ()
 {
-  char * c;
   struct in_addr in;
+  char * c = "127.0.0.1";
 
+  c = (char *)"127.0.0.1";
   inet_aton(c,&in);
   ;
   return 0;
@@ -1664,6 +1665,7 @@ main ()
   char * c;
   struct in_addr in;
 
+  c = (char *)"127.0.0.1";
   inet_pton(AF_INET,c,&in);
   ;
   return 0;

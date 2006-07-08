@@ -1,4 +1,4 @@
-use NetAddr::IP::Lite;
+use NetAddr::IP::Lite qw(:old_nth);
 
 my $nets = {
     '10.0.0.16'		=> [ 24, '10.0.0.1', '10.0.0.254', '10.0.0.10'],

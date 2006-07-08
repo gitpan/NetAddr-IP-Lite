@@ -63,7 +63,7 @@ for (my $i=0;$i < @num;$i+=3) {
   my $xspur = $num[$i+2];
   my($spur,$cidr) = notcontiguous($bstr);
   print "cidr: $cidr, exp: $xcidr\nnot "
-	 unless $cidr == $xcidr
+	 unless $cidr == $xcidr;
   &ok;
   $spur = 1 if $spur;
   print "spur: $spur, exp: $xspur\nnot "

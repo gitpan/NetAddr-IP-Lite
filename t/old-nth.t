@@ -1,6 +1,6 @@
 
 #use diagnostics;
-use NetAddr::IP::Lite;
+use NetAddr::IP::Lite qw(:old_nth);
 
 $| = 1;
 

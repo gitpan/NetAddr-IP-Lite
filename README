@@ -8,6 +8,7 @@ SYNOPSIS
             V4mask
             V4net
             :aton
+            :old_nth
       );
 
       my $ip = new NetAddr::IP::Lite '127.0.0.1';
@@ -277,22 +278,65 @@ DESCRIPTION
         are not both "NetAddr::IP::Lite" objects.
 
     "->first()"
-        Returns a new object representing the first useable IP address
-        within the subnet (ie, the first host address).
+        Returns a new object representing the first usable IP address within
+        the subnet (ie, the first host address).
 
     "->last()"
-        Returns a new object representing the last useable IP address within
+        Returns a new object representing the last usable IP address within
         the subnet (ie, one less than the broadcast address).
 
     "->nth($index)"
-        Returns a new object representing the *n*-th useable IP address
+        Returns a new object representing the *n*-th usable IP address
         within the subnet (ie, the *n*-th host address). If no address is
         available (for example, when the network is too small for "$index"
         hosts), "undef" is returned.
 
+        Version 4.00 of NetAddr::IP and version 1.00 of NetAddr::IP::Lite
+        implements "->nth($index)" and "->num()" exactly as the
+        documentation states. Previous versions behaved slightly differently
+        and not in a consistent manner.
+
+        To use the old behavior for "->nth($index)" and "->num()":
+
+          use NetAddr::IP::Lite qw(:old_nth);
+
+          old behavior:
+          NetAddr::IP->new('10/32')->nth(0) == undef
+          NetAddr::IP->new('10/32')->nth(1) == undef
+          NetAddr::IP->new('10/31')->nth(0) == undef  
+          NetAddr::IP->new('10/31')->nth(1) == 10.0.0.1/31
+          NetAddr::IP->new('10/30')->nth(0) == undef  
+          NetAddr::IP->new('10/30')->nth(1) == 10.0.0.1/30
+          NetAddr::IP->new('10/30')->nth(2) == 10.0.0.2/30
+          NetAddr::IP->new('10/30')->nth(3) == 10.0.0.3/30
+
+        Note that in each case, the broadcast address is represented in the
+        output set and that the 'zero'th index is alway undef.
+
+          new behavior:
+          NetAddr::IP->new('10/32')->nth(0)  == 10.0.0.0/32
+          NetAddr::IP->new('10.1/32'->nth(0) == 10.0.0.1/32
+          NetAddr::IP->new('10/31')->nth(0)  == undef  
+          NetAddr::IP->new('10/31')->nth(1)  == undef
+          NetAddr::IP->new('10/30')->nth(0) == 10.0.0.1/30
+          NetAddr::IP->new('10/30')->nth(1) == 10.0.0.2/30
+          NetAddr::IP->new('10/30')->nth(2) == undef
+
+        Note that a /32 net always has 1 usable address while a /31 has none
+        since it has a network and broadcast address, but no host addresses.
+        The first index (0) returns the address immediately following the
+        network address.
+
     "->num()"
-        Returns the number of useable IP addresses within the subnet, not
-        counting the broadcast address.
+        Version 4.00 of NetAddr::IP and version 1.00 of NetAddr::IP::Lite
+        Returns the number of usable addresses IP addresses within the
+        subnet, not counting the broadcast or network address. Previous
+        versions returned th number of IP addresses not counting the
+        broadcast address.
+
+        To use the old behavior for "->nth($index)" and "->num()":
+
+          use NetAddr::IP::Lite qw(:old_nth);
 
 EXPORT_OK
             Zero
@@ -300,6 +344,7 @@ EXPORT_OK
             V4mask
             V4net
             :aton
+            :old_nth
 
 AUTHOR
     Luis E. Muñoz <luismunoz@cpan.org> Michael Robinton

@@ -18,8 +18,10 @@ t/mask.t
 t/masklen.t
 t/netaddr.t
 t/network.t
-t/nth.t
-t/num.t
+t/new-nth.t
+t/old-nth.t
+t/new-num.t
+t/old-num.t
 t/numeric.t
 t/over-qq.t
 t/over_comp.t
@@ -36,7 +38,8 @@ t/v4-basem.t
 t/v4-cidr.t
 t/v4-cnew.t
 t/v4-contains.t
-t/v4-first.t
+t/v4-new-first.t
+t/v4-old-first.t
 t/v4-last.t
 t/v4-new.t
 t/v4-num.t
@@ -44,7 +47,8 @@ t/v4-numeric.t
 t/v4-range.t
 t/v4-snew.t
 t/v4-wnew.t
-t/v6-base.t
+t/v6-new-base.t
+t/v6-old-base.t
 t/v6-contains.t
 t/v6-inc.t
 t/v6-numeric.t

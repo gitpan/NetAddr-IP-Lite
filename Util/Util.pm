@@ -13,7 +13,7 @@ require Exporter;
 
 @ISA = qw(Exporter DynaLoader);
 
-$VERSION = do { my @r = (q$Revision: 0.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 my @export_ok = qw(
 	inet_aton
@@ -301,6 +301,8 @@ Takes an IPv6 RDATA string and returns an 8 segment IPv6 hex address
 =cut
 
 sub ipv6_n2x {
+  die "Bad arg length for 'ipv6_n2x', length is ". length($_[0]) ." should be 16"
+	unless length($_[0]) == 16;
   return sprintf("%X:%X:%X:%X:%X:%X:%X:%X",unpack("n8",$_[0]));
 }
 
@@ -316,6 +318,8 @@ representation.
 =cut
 
 sub ipv6_n2d {
+  die "Bad arg length for 'ipv6_n2x', length is ". length($_[0]) ." should be 16"
+	unless length($_[0]) == 16;
   my @hex = (unpack("n8",$_[0]));
   $hex[9] = $hex[7] & 0xff;
   $hex[8] = $hex[7] >> 8;

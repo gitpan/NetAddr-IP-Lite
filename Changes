@@ -1,5 +1,16 @@
 Revision history for Perl extension NetAddr::IP::Lite
 
+1.01  Thu Jul  6 10:46:48 PDT 2006
+	update v4-wnew.t to warn user of possible long wait
+	update Util.pm v0.17 -- see Changes in that distro
+
+1.00  Mon Jun 26 13:34:00 PDT 2006
+	changed behavior of ->nth and ->num
+	to 'exactly' conform to the documentation
+
+	add :old_nth tag to preserve old behavior
+	and update tests to check both
+
 0.12  Sun Jun 25 16:13:00 PDT 2006
 	imported missing 'bcd2bin'
 

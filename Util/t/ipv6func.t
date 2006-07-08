@@ -5,7 +5,7 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..25\n"; }
+BEGIN { $| = 1; print "1..27\n"; }
 END {print "not ok 1\n" unless $loaded;}
 
 use NetAddr::IP::Util qw(
@@ -56,3 +56,20 @@ for (my $i=0;$i<@num;$i+=3) {
 	unless $ipv6d eq $num[$i +2];
   &ok;
 }
+
+## test 26	check bad length n2x
+my $try = '1234';
+my $notempty = eval {
+	ipv6_n2x($try);
+};
+print "failed bad argument length test for ipv6_n2x\nnot "
+	unless $@ && $@ =~ /Bad arg/;
+&ok;
+
+## test 27	check bad length n2d
+$notempty = eval {
+	ipv6_n2d($try);
+};
+print "failed bad argument length test for ipv6_n2d\nnot "
+	unless $@ && $@ =~ /Bad arg/;
+&ok;

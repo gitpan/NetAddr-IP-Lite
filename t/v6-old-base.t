@@ -29,14 +29,18 @@ sub myfail() {0}
      ['2001:620:600:0:1::1', 1,'2001:620:600:0:1:0:0:1/128',myfail], 
      );
 
-use NetAddr::IP::Lite;
+use NetAddr::IP::Lite qw(:old_nth);
 use Test::More;
 
 my($a, $ip, $test);
 
-plan tests => 4 * @addr + 4;
+$test = 4 * @addr + 4;
+plan tests => $test;
 
-for $a (@addr) {
+$test = 1;
+
+sub tst {
+  for $a (@addr) {
 	$ip = new NetAddr::IP::Lite $a->[0];
 	$a->[0] =~ s,/\d+,,;
 	isa_ok($ip, 'NetAddr::IP::Lite', "$a->[0] ");
@@ -44,12 +48,17 @@ for $a (@addr) {
 #	is(uc $ip->short, $a->[0], "short returns $a->[0]");
 	is($ip->bits, 128, "bits == 128");
 	is($ip->version, 6, "version == 6");
+	my $index = $a->[1];
 	if ($a->[3]) {
-	  is(uc $ip->nth($a->[1]), $a->[2], "nth $a->[0], $a->[1]");
+	  is(uc $ip->nth($index), $a->[2], "nth $a->[0], $index");
 	} else {
-	  ok(!$ip->nth($a->[1]),"nth $a->[0], undef");
+	  ok(!$ip->nth($index),"nth $a->[0], undef");
 	}
+ }
 }
+
+tst();
+
 
 $test = new NetAddr::IP::Lite 'f34::1';
 isa_ok($test, 'NetAddr::IP::Lite');

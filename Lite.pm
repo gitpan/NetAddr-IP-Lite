@@ -6,7 +6,7 @@ use Carp;
 use strict;
 #use diagnostics;
 #use warnings;
-use NetAddr::IP::Util qw(
+use NetAddr::IP::Util 0.17 qw(
 	inet_any2n
 	addconst
 	sub128
@@ -25,9 +25,9 @@ use NetAddr::IP::Util qw(
 	mask4to6
 	ipv4to6
 );
-use vars qw(@ISA @EXPORT_OK $Class $VERSION $isV6 $Accept_Binary_IP);
+use vars qw(@ISA @EXPORT_OK $Class $VERSION $isV6 $Accept_Binary_IP $Old_nth);
 
-$VERSION = do { my @r = (q$Revision: 0.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.01 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 require Exporter;
 
@@ -40,7 +40,7 @@ require Exporter;
 # at the time of use-ing the module. See docs for details.
 
 $Accept_Binary_IP = 0;
-
+$Old_nth = 0;
 
 =head1 NAME
 
@@ -54,6 +54,7 @@ NetAddr::IP::Lite - Manages IPv4 and IPv6 addresses and subnets
 	V4mask
 	V4net
 	:aton
+	:old_nth
   );
 
   my $ip = new NetAddr::IP::Lite '127.0.0.1';
@@ -907,7 +908,7 @@ sub within ($$) {
 
 =item C<-E<gt>first()>
 
-Returns a new object representing the first useable IP address within
+Returns a new object representing the first usable IP address within
 the subnet (ie, the first host address).
 
 =cut
@@ -918,7 +919,7 @@ sub first ($) {
 
 =item C<-E<gt>last()>
 
-Returns a new object representing the last useable IP address within
+Returns a new object representing the last usable IP address within
 the subnet (ie, one less than the broadcast address).
 
 =cut
@@ -929,10 +930,45 @@ sub last ($) {
 
 =item C<-E<gt>nth($index)>
 
-Returns a new object representing the I<n>-th useable IP address within
+Returns a new object representing the I<n>-th usable IP address within
 the subnet (ie, the I<n>-th host address).  If no address is available
 (for example, when the network is too small for C<$index> hosts),
 C<undef> is returned.
+
+Version 4.00 of NetAddr::IP and version 1.00 of NetAddr::IP::Lite implements 
+C<-E<gt>nth($index)> and C<-E<gt>num()> exactly as the documentation states. 
+Previous versions behaved slightly differently and not in a consistent
+manner.
+
+To use the old behavior for C<-E<gt>nth($index)> and C<-E<gt>num()>:
+
+  use NetAddr::IP::Lite qw(:old_nth);
+
+  old behavior:
+  NetAddr::IP->new('10/32')->nth(0) == undef
+  NetAddr::IP->new('10/32')->nth(1) == undef
+  NetAddr::IP->new('10/31')->nth(0) == undef  
+  NetAddr::IP->new('10/31')->nth(1) == 10.0.0.1/31
+  NetAddr::IP->new('10/30')->nth(0) == undef  
+  NetAddr::IP->new('10/30')->nth(1) == 10.0.0.1/30
+  NetAddr::IP->new('10/30')->nth(2) == 10.0.0.2/30
+  NetAddr::IP->new('10/30')->nth(3) == 10.0.0.3/30
+
+Note that in each case, the broadcast address is represented in the
+output set and that the 'zero'th index is alway undef.
+
+  new behavior:
+  NetAddr::IP->new('10/32')->nth(0)  == 10.0.0.0/32
+  NetAddr::IP->new('10.1/32'->nth(0) == 10.0.0.1/32
+  NetAddr::IP->new('10/31')->nth(0)  == undef  
+  NetAddr::IP->new('10/31')->nth(1)  == undef
+  NetAddr::IP->new('10/30')->nth(0) == 10.0.0.1/30
+  NetAddr::IP->new('10/30')->nth(1) == 10.0.0.2/30
+  NetAddr::IP->new('10/30')->nth(2) == undef
+
+Note that a /32 net always has 1 usable address while a /31 has none since
+it has a network and broadcast address, but no host addresses. The first
+index (0) returns the address immediately following the network address.
 
 =cut
 
@@ -940,22 +976,37 @@ sub nth ($$) {
   my $self    = shift;
   my $count   = shift;
 
+  ++$count unless ($Old_nth);
   return undef if ($count < 1 or $count > $self->num ());
   return $self->network + $count;
 }
 
 =item C<-E<gt>num()>
 
-Returns the number of useable IP addresses within the
-subnet, not counting the broadcast address. 
+Version 4.00 of NetAddr::IP and version 1.00 of NetAddr::IP::Lite
+Returns the number of usable addresses IP addresses within the
+subnet, not counting the broadcast or network address. Previous versions
+returned th number of IP addresses not counting the broadcast address.
+
+To use the old behavior for C<-E<gt>nth($index)> and C<-E<gt>num()>:
+
+  use NetAddr::IP::Lite qw(:old_nth);
 
 =cut
 
 sub num ($) {
   my @net = unpack('L3N',$_[0]->{mask} ^ Ones);
-  return $net[3] if $net[3];
-  return 4294967295 if $net[0] || $net[1] || $net[2]; # 2**32 -1
-  return 0;
+  if ($Old_nth) {
+# number of ip's less broadcast
+    return 0xfffffffe if $net[0] || $net[1] || $net[2]; # 2**32 -1
+    return $net[3] if $net[3];
+  } else {	# returns 1 for /32 /128, 0 for /31 /127 else n-2 up to 2**32
+# number of usable IP's === number of ip's less broadcast & network addys
+    return 0xfffffffd if $net[0] || $net[1] || $net[2]; # 2**32 -2
+    return 1 unless $net[3];
+    $net[3]--;
+  }
+  return $net[3];
 }
 
 =pod
@@ -969,6 +1020,10 @@ sub import {
     $Accept_Binary_IP = 1;
     @_ = grep { $_ ne ':aton' } @_;
   }
+  if (grep { $_ eq ':old_nth' } @_) {
+    $Old_nth = 1;
+    @_ = grep { $_ ne ':old_nth' } @_;
+  }
   NetAddr::IP::Lite->export_to_level(1, @_);
 }
 
@@ -979,6 +1034,7 @@ sub import {
 	V4mask
 	V4net
 	:aton
+	:old_nth
 
 =head1 AUTHOR
 

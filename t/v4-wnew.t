@@ -8,6 +8,14 @@ my @bad = map { ("$_.neveranydomainlikethis",
 ok(defined NetAddr::IP::Lite->new($_), "defined ->new($_)")
     for @good;
 
+my $bad = scalar @bad;
+
+diag <<EOF;
+
+\tThe following $bad tests involve resolving (hopefully) 
+\tnon-existant names. This may take a while.
+EOF
+
 ok(! defined NetAddr::IP::Lite->new($_), "not defined ->new($_)")
     for @bad;
 
